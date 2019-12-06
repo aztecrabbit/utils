@@ -5,33 +5,34 @@ from threading import RLock
 lock = RLock()
 
 class utils(object):
-    def __init__(self, file_path):
+    def __init__(self, file_name):
         super(utils, self).__init__()
 
-        self.file_path = file_path
+        self.file_name = file_name
         self.lock = lock
 
-        self.patterns = {
-            'R1' : '\033[31;1m', 'G1' : '\033[32;1m',
-            'Y1' : '\033[33;1m', 'P1' : '\033[35;1m',
-            'CC' : '\033[0m'
-        }
+    def get_terminal_size(self):
+        terminal_size = {}
+        terminal_size['columns'], terminal_size['lines'] = 256, 64
 
-    def terminal_size(self):
-        data = {}
-        data['columns'], data['lines'] = os.get_terminal_size()
+        try:
+            terminal_size['columns'], terminal_size['lines'] = os.get_terminal_size()
+        except: pass
 
-        return data
+        return terminal_size
 
-    def real_path(self, file_name):
-        return os.path.dirname(os.path.abspath(self.file_path)) + file_name
+    def real_path(self, name):
+        return os.path.dirname(os.path.abspath(self.file_name)) + name
 
-    def colors(self, value='', patterns='', remove=False):
+    def colors(self, value, patterns=None):
         if not patterns:
-            patterns = self.patterns
+            patterns = [
+                ('R1', '\033[31;1m'), ('G1', '\033[32;1m'),
+                ('Y1', '\033[33;1m'), ('P1', '\033[35;1m'), ('CC', '\033[0m'),
+            ]
 
-        for code in patterns:
-            value = value.replace('[{}]'.format(code), patterns[code] if not remove else '')
+        for key, val in patterns:
+            value = value.replace(f"[{key}]", val)
 
         return value
 
@@ -41,13 +42,8 @@ class utils(object):
             print(self.colors(f'{color}{value}'))
         print(self.colors('[CC]'))
 
-    def xfilter(self, data):
-        for i in range(len(data)):
-            data[i] = data[i].strip()
-            if data[i].startswith('#'):
-                data[i] = ''
-
-        return list(set([x for x in data if x]))
+    def xfilter(self, data_list):
+        return list(set([x.strip() for x in data_list if x.strip() and not x.startswith('#')]))
 
     def sleep_forever(self):
         while True:
